@@ -20,7 +20,7 @@ Read [`CURRICULUM.md`](CURRICULUM.md) top to bottom so you know the shape of the
 
 ### Step 1 — Get your own Phase 1 repo
 
-Go to **[elective-craft-track-http](https://github.com/ai-builder-circle/elective-craft-track-http)** and click the green **Use this template → Create a new repository**. Name it `http-by-hand`, owner = you. That makes a new repo you own. Now clone *that* — your copy:
+Go to **[elective-craft-track-http](https://github.com/ai-builder-circle/http-by-hand-starter)** and click the green **Use this template → Create a new repository**. Name it `http-by-hand`, owner = you. That makes a new repo you own. Now clone *that* — your copy:
 
 ```bash
 git clone git@github.com:YOUR-USERNAME/http-by-hand.git
@@ -44,7 +44,7 @@ When the phase's criteria are green, open a PR in your own repo (one per phase) 
 
 ### Step 4 — Phases 2–5
 
-Same move, second starter: **Use this template** on **[elective-craft-track-api](https://github.com/ai-builder-circle/elective-craft-track-api)** → your own `freelanceforge-api` → clone it. The loop now runs on concept docs `w04`–`w16`, building module by module per each `BUILD_ORDER.md`, through Gates 2 to 5.
+Same move, second starter: **Use this template** on **[elective-craft-track-api](https://github.com/ai-builder-circle/freelanceforge-api-starter)** → your own `freelanceforge-api` → clone it. The loop now runs on concept docs `w04`–`w16`, building module by module per each `BUILD_ORDER.md`, through Gates 2 to 5.
 
 ### Step 5 — Finish
 
