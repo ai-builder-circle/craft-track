@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§01 — The Wire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0F4; --raised:#FFFFFF; --ink:#121D2B; --soft:#4A5A6E;
+  --rule:#C7D1DC; --pen:#BE3229; --blue:#0A5AA0; --amber:#96660F;
+  --wire-bg:#101A26; --wire-fg:#D3E0EC; --wire-dim:#5D7086;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Archivo','IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 120px}
+
+/* masthead */
+header.mast{border-bottom:2px solid var(--ink);padding:56px 0 22px;margin-bottom:48px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen);font-weight:600}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(42px,8vw,76px);line-height:.94;letter-spacing:-.035em;margin:14px 0 12px}
+.standfirst{font-size:19px;color:var(--soft);max-width:60ch;margin:0}
+.meta{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--soft);margin-top:26px;letter-spacing:.04em}
+.meta b{color:var(--ink);font-weight:600}
+
+/* sections */
+section{margin:64px 0}
+.sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-label span:last-child{color:var(--pen)}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,4.4vw,36px);letter-spacing:-.02em;line-height:1.1;margin:0 0 14px}
+h3{font-family:var(--disp);font-weight:600;font-size:20px;letter-spacing:-.01em;margin:38px 0 10px}
+p{margin:0 0 16px;max-width:68ch}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.89em;background:#DDE4EC;padding:1px 5px;border-radius:2px}
+
+/* panel */
+.panel{background:var(--raised);border:1px solid var(--rule);border-radius:3px;padding:24px;margin:22px 0}
+.panel-head{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:16px}
+
+/* wire block */
+.wire{background:var(--wire-bg);color:var(--wire-fg);font-family:var(--mono);font-size:13.5px;line-height:1.85;padding:20px;border-radius:3px;overflow-x:auto;white-space:pre}
+.wire .crlf{color:#40536B}
+.wire.showcrlf .crlf{color:var(--pen);font-weight:600}
+
+/* dissector */
+.dis-line{display:block}
+.seg{cursor:pointer;border-radius:2px;padding:1px 2px;transition:background .12s,color .12s}
+.seg:hover{background:#25384C}
+.seg.on{background:var(--pen);color:#fff}
+.annot{border-left:3px solid var(--pen);background:#FCF1F0;padding:14px 18px;margin-top:16px;min-height:92px}
+.annot .k{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--pen);font-weight:600;display:block;margin-bottom:6px}
+.annot p{margin:0 0 8px;font-size:15px}
+.annot p:last-child{margin:0}
+.annot .rfc{font-family:var(--mono);font-size:12px;color:var(--soft)}
+
+/* controls */
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+button{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:var(--raised);color:var(--ink);border:1px solid var(--ink);padding:9px 14px;border-radius:2px;cursor:pointer;transition:background .12s,color .12s}
+button:hover{background:var(--ink);color:var(--raised)}
+button.active{background:var(--ink);color:var(--raised)}
+button:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+
+/* framing sim */
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.sim{grid-template-columns:1fr}}
+.sim-col h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 10px;font-weight:600}
+.readout{font-family:var(--mono);font-size:13px;line-height:1.8;background:#F5F8FA;border:1px solid var(--rule);padding:14px;border-radius:3px;min-height:180px;white-space:pre-wrap}
+.ok{color:#1B6B3A;font-weight:600}
+.bad{color:var(--pen);font-weight:600}
+.warn{color:var(--amber);font-weight:600}
+
+/* callouts */
+.callout{border-left:3px solid var(--blue);background:#EDF4FB;padding:16px 20px;margin:24px 0}
+.callout.pen{border-color:var(--pen);background:#FCF1F0}
+.callout .k{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.pen .k{color:var(--pen)}
+.callout p:last-child{margin:0}
+
+/* proof */
+.q{border-top:1px solid var(--rule);padding:20px 0}
+.q:last-of-type{border-bottom:1px solid var(--rule)}
+.q-num{font-family:var(--mono);font-size:12px;color:var(--pen);font-weight:600}
+.q-text{font-weight:500;margin:6px 0 12px;max-width:66ch}
+.reveal{display:none;border-left:3px solid var(--rule);padding-left:16px;color:var(--soft);font-size:15px}
+.reveal.on{display:block}
+.reveal p{margin:0 0 10px}
+.reveal p:last-child{margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:15px;margin:20px 0}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:600}
+td code{background:#DDE4EC}
+
+footer{border-top:2px solid var(--ink);margin-top:80px;padding-top:20px;font-family:var(--mono);font-size:12px;color:var(--soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Craft Track · Phase 1 · Week 1</div>
+  <h1>The Wire</h1>
+  <p class="standfirst">HTTP is a text protocol you could type by hand into a socket. Everything a framework does to it is convenience. This week you find out exactly what that convenience is hiding.</p>
+  <div class="meta">
+    <span><b>Primary source</b> RFC 9110 §3, §5, §6</span>
+    <span><b>Also</b> RFC 9112 §6 (framing)</span>
+    <span><b>Deliverable</b> RequestParser.java</span>
+  </div>
+</header>
+
+<!-- ============ LAB ============ -->
+<section>
+  <div class="sec-label"><span>Layer 1 — Lab</span><span>Manipulate before you read</span></div>
+  <h2>1.1 &nbsp;The dissector</h2>
+  <p>Below is a real request, exactly as it arrives on the socket. Click any highlighted region. Do this before reading the chapter — you should be able to guess most of these.</p>
+
+  <div class="panel">
+    <div class="panel-head">Bytes received on port 8080</div>
+    <div class="wire" id="wire"><span class="dis-line"><span class="seg" data-k="method">POST</span> <span class="seg" data-k="target">/quotes/9f3a/line-items</span> <span class="seg" data-k="version">HTTP/1.1</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="host">Host: api.freelanceforge.co.za</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="ctype">Content-Type: application/json</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="clen">Content-Length: 61</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="accept">Accept: application/json, text/plain;q=0.5</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="idem">Idempotency-Key: 4f21c8de-77b0-4c1a</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="blank">(empty line)</span><span class="crlf">␍␊</span></span><span class="dis-line"><span class="seg" data-k="body">{"description":"Logo concept round","amountCents":450000}</span></span></div>
+
+    <div class="ctrls">
+      <button id="crlfBtn">Highlight CRLF</button>
+      <button id="clearBtn">Clear selection</button>
+    </div>
+
+    <div class="annot" id="annot">
+      <span class="k">Annotation</span>
+      <p>Click a region above.</p>
+    </div>
+  </div>
+
+  <h2>1.2 &nbsp;Where does the body end?</h2>
+  <p>This is the question that makes framing real. The server has a socket. Bytes arrive. Nothing in the stream says "message over" — the server has to know when to stop reading. Pick a scenario and read what the server does.</p>
+
+  <div class="panel">
+    <div class="ctrls" id="frameCtrls">
+      <button data-f="correct" class="active">Content-Length: 61 (correct)</button>
+      <button data-f="short">Content-Length: 40 (too small)</button>
+      <button data-f="long">Content-Length: 90 (too large)</button>
+      <button data-f="chunked">Transfer-Encoding: chunked</button>
+      <button data-f="none">No length header at all</button>
+    </div>
+    <div class="sim">
+      <div class="sim-col">
+        <h4>On the wire</h4>
+        <div class="wire" id="frameWire" style="min-height:180px"></div>
+      </div>
+      <div class="sim-col">
+        <h4>What the server does</h4>
+        <div class="readout" id="frameOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout pen">
+    <span class="k">Drill — Saturday, 40 minutes</span>
+    <p>Run <code>nc -l 8080</code> in one terminal. In another, <code>curl -X POST localhost:8080/quotes -d '{"a":1}' -H 'Content-Type: application/json'</code>. Read what curl actually sent. Then do the reverse: <code>telnet</code> or <code>nc</code> into a real server and type a GET request by hand, including the blank line. Paste both transcripts into <code>docs/wire-transcripts/</code>.</p>
+  </div>
+</section>
+
+<!-- ============ CHAPTER ============ -->
+<section>
+  <div class="sec-label"><span>Layer 2 — Chapter</span><span>The mechanism</span></div>
+  <h2>2 &nbsp;What HTTP actually is</h2>
+
+  <p>HTTP is a <strong>request/response protocol over a reliable byte stream</strong>. That's the whole thing. TCP gives you an ordered stream of bytes with no message boundaries; HTTP's job is to impose boundaries on that stream and attach meaning to what's inside them.</p>
+
+  <p>Everything else — routing, controllers, serialisation, middleware — is code someone wrote on top of that. When you build <code>RequestParser</code> this week, you are writing the layer that every framework you will ever use is standing on.</p>
+
+  <h3>2.1 &nbsp;Anatomy</h3>
+  <p>A request has exactly four parts, in order:</p>
+  <table>
+    <tr><th>Part</th><th>Format</th><th>Terminated by</th></tr>
+    <tr><td><strong>Request line</strong></td><td><code>METHOD SP target SP HTTP/version</code></td><td>CRLF</td></tr>
+    <tr><td><strong>Header fields</strong></td><td><code>name: value</code>, one per line</td><td>CRLF each</td></tr>
+    <tr><td><strong>Empty line</strong></td><td>nothing</td><td>CRLF</td></tr>
+    <tr><td><strong>Body</strong></td><td>opaque bytes</td><td>framing rules — see §2.3</td></tr>
+  </table>
+
+  <p>The line terminator is <code>CRLF</code> — carriage return then line feed, bytes <code>0x0D 0x0A</code>. Not <code>\n</code>. This trips people constantly because most editors and most Java string handling default to <code>\n</code>, and a server that accepts bare <code>\n</code> will happily parse a request that a strict server rejects. Worse, the discrepancy is the mechanism behind <strong>request smuggling</strong> attacks, where a proxy and an origin server disagree about where one message ends and the next begins.</p>
+
+  <h3>2.2 &nbsp;Headers are trickier than they look</h3>
+  <p>Three things that will bite you when you write <code>Headers.java</code>:</p>
+  <p><strong>Field names are case-insensitive.</strong> <code>Content-Type</code>, <code>content-type</code> and <code>CONTENT-TYPE</code> are the same field. HTTP/2 goes further and requires lowercase on the wire. Your map must not be a plain <code>HashMap&lt;String,String&gt;</code>.</p>
+  <p><strong>Split on the first colon only.</strong> Values contain colons routinely — timestamps, URLs, IPv6 addresses. <code>line.split(":")</code> is a bug waiting for a <code>Date</code> header.</p>
+  <p><strong>A field can appear more than once.</strong> Repeated fields are semantically equivalent to one field with comma-joined values — but only for fields whose grammar is a comma-separated list. <code>Set-Cookie</code> famously breaks this rule, which is why it needs special handling in nearly every HTTP library ever written.</p>
+
+  <h3>2.3 &nbsp;Message framing</h3>
+  <p>The server reads the request line and headers up to the empty line. Then it must decide how many body bytes to read. The rules, in priority order:</p>
+  <p><strong>1. <code>Transfer-Encoding: chunked</code> wins.</strong> The body arrives as a sequence of chunks, each prefixed by its size in hexadecimal, terminated by a zero-length chunk. This lets a sender stream a body whose total length it doesn't know yet.</p>
+  <p><strong>2. Otherwise <code>Content-Length</code> decides.</strong> Read exactly that many bytes. Not one more, not one fewer.</p>
+  <p><strong>3. Otherwise there is no body.</strong> For a request, absence of both headers means zero-length body. (Responses have an extra rule: they may be framed by connection close, which requests cannot use — the server would have no way to reply.)</p>
+  <p>If <em>both</em> headers appear, that is a framing ambiguity and a security problem, not a puzzle to resolve cleverly. Reject the message.</p>
+
+  <div class="callout">
+    <span class="k">Why this matters beyond parsing</span>
+    <p>Connections are reused. After one request/response cycle, the same TCP connection typically carries the next request. If your parser reads one byte too few, those leftover bytes become the start of what looks like the next request — attacker-controlled bytes interpreted as a request line. That is request smuggling, and it is a framing bug, not a fancy exploit.</p>
+  </div>
+
+  <h3>2.4 &nbsp;Statelessness</h3>
+  <p>HTTP is stateless in a precise sense: <strong>each request carries everything the server needs to understand it.</strong> The server is not required to remember anything between requests.</p>
+  <p>Note what this does <em>not</em> say. It does not say the application has no state — your quotes obviously persist. It says the <em>protocol</em> carries no state. Session state is application state, and if you keep it server-side you have made a deliberate trade: you gained revocability and lost the ability to route any request to any instance without coordination.</p>
+  <p>Hold that sentence. In Week 12 you will make exactly this trade again under the name "sessions versus JWT," and most people make it badly because they never connected it back to here.</p>
+
+  <h3>2.5 &nbsp;Connection lifecycle</h3>
+  <p>In HTTP/1.1 connections are persistent by default. One TCP connection, many request/response pairs, in order. <code>Connection: close</code> opts out. This is why your server can't just <code>read everything until EOF</code> — EOF may never come.</p>
+  <p>Requests on one connection are strictly ordered: response 1 must be fully written before response 2 begins. HTTP/1.1 pipelining tried to overlap this and failed in practice because of head-of-line blocking, which is one of the problems HTTP/2 multiplexing was built to solve. You are implementing 1.1, so: one at a time, in order.</p>
+</section>
+
+<!-- ============ PROOF ============ -->
+<section>
+  <div class="sec-label"><span>Layer 3 — Proof</span><span>Answer before revealing</span></div>
+  <h2>3 &nbsp;Self-test</h2>
+  <p>Write your answer down first. Recognising a correct answer is not the same as producing one, and the gap between those two is exactly where week-one confidence goes to die.</p>
+
+  <div class="q">
+    <div class="q-num">Q1</div>
+    <div class="q-text">Your parser reads headers with <code>line.split(":")</code> and takes index 0 and 1. Name a real header this breaks, and say what the broken value looks like.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><code>Date: Tue, 18 Aug 2026 09:14:22 GMT</code> — you'd get the value <code>" Tue, 18 Aug 2026 09"</code> and silently drop the rest. Same for <code>Location</code> with an absolute URL (<code>https://…</code>) and any IPv6 host. Split on the first colon: <code>indexOf(':')</code>, then substring.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q2</div>
+    <div class="q-text">A request arrives with <code>Content-Length: 61</code> but the client sends 61 bytes of body and then immediately sends a second request on the same connection. Walk through what your server reads. Now change it to <code>Content-Length: 55</code>. What does the server see as the start of the next request?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>With 61 it reads exactly the body, leaves the buffer positioned at the start of request two, and the next parse works. With 55 it reads 55 bytes, leaves 6 body bytes unread, and then tries to parse those 6 bytes as a request line. Best case: 400. Worst case: those bytes are attacker-chosen and form a valid request line, and you have just executed a request the client never legitimately sent.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q3</div>
+    <div class="q-text">Why can a response be framed by closing the connection, but a request cannot?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>Because the connection is bidirectional and the roles are asymmetric. A server that has finished writing a response can close and the client knows the body ended. A client that closed to signal "body finished" would have destroyed the channel the response needs to come back on.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q4</div>
+    <div class="q-text">HTTP is stateless. You are about to build a login. State one thing that fact permits and one thing it costs you.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><strong>Permits:</strong> any request can be handled by any server instance, so you scale horizontally without sticky sessions or shared session storage. <strong>Costs:</strong> identity must be re-established on every single request, which means credentials or a token travel on every request — more surface area, more to validate, and a revocation problem if you push that state entirely to the client.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q5</div>
+    <div class="q-text">Your <code>Headers</code> class is a <code>HashMap&lt;String,String&gt;</code>. Give two distinct bugs this causes.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>(1) Case sensitivity — a client sending <code>content-type</code> gets a null lookup for <code>Content-Type</code>, so your negotiation silently fails. (2) Repeated fields — the second occurrence overwrites the first, so <code>Accept-Encoding: gzip</code> followed by <code>Accept-Encoding: br</code> loses gzip. And a third, if you want it: no ordering guarantees for fields where order carries meaning.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q6</div>
+    <div class="q-text">A message arrives with both <code>Content-Length: 10</code> and <code>Transfer-Encoding: chunked</code>. What do you do, and why is "prefer chunked and move on" not good enough?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>Reject it — 400, close the connection. "Prefer chunked" is what the spec says a recipient should do <em>if it processes the message at all</em>, but the danger is that you are rarely the only hop. If a front proxy honours <code>Content-Length</code> and you honour <code>Transfer-Encoding</code>, the two of you disagree about where the message ends, and the difference is a smuggled request. Ambiguous framing is refused, not resolved.</p></div>
+  </div>
+
+  <h3>Gate criteria for this week</h3>
+  <p>Your commit lands when all of these are true:</p>
+  <table>
+    <tr><th>#</th><th>Criterion</th></tr>
+    <tr><td>1</td><td><code>RequestParser</code> parses request line, headers and body from a raw <code>InputStream</code>, with no framework and no JSON library.</td></tr>
+    <tr><td>2</td><td>Header lookup is case-insensitive and preserves repeated fields.</td></tr>
+    <tr><td>3</td><td>Framing follows the priority order in §2.3, and ambiguous framing returns 400.</td></tr>
+    <tr><td>4</td><td>Malformed input returns a status, never an uncaught exception. Test at least: no CRLF, missing version, negative Content-Length, header with no colon.</td></tr>
+    <tr><td>5</td><td>Two sequential requests on one connection both parse correctly.</td></tr>
+    <tr><td>6</td><td><code>docs/wire-transcripts/</code> contains at least two annotated real captures.</td></tr>
+  </table>
+</section>
+
+<footer>
+  <span>Craft Track §01 — The Wire</span>
+  <span>Next: §02 Representations</span>
+</footer>
+</div>
+
+<script>
+const ANNOT = {
+  method:["Method","The method is the <em>semantics</em> of the request — what the client is asking for, not what your code does. It is case-sensitive and uppercase. POST is the only method here with no guarantees: not safe, not idempotent. That absence is why the Idempotency-Key header exists three lines below.","RFC 9110 §9"],
+  target:["Request target","Origin-form: absolute path plus optional query. Note it is a <strong>path</strong>, not a URL — the host lives in its own header. Your PathPattern parses this. Percent-decoding happens here and is a classic injection surface: decode once, and never decode a second time.","RFC 9112 §3.2"],
+  version:["HTTP version","Tells the recipient which grammar to apply. HTTP/1.1 means persistent connections by default and Host is mandatory. Your server reads this and, in a strict implementation, returns 505 for a major version it can't speak.","RFC 9110 §2.5"],
+  host:["Host header","Mandatory in HTTP/1.1 — a request without it is a 400, no exceptions. It exists because one IP can serve many domains, so the path alone is not enough to identify the resource. It is also attacker-controlled, which makes 'build absolute URLs from the Host header' a well-known poisoning vector.","RFC 9110 §7.2"],
+  ctype:["Content-Type","Describes the media type of <em>this body</em>. It is not a request for a format — that's Accept. Missing Content-Type on a body-bearing request means the recipient must guess, and guessing is how content sniffing vulnerabilities happen. Unsupported type on the way in is 415, never 400.","RFC 9110 §8.3"],
+  clen:["Content-Length","The framing header. Counts <strong>bytes</strong>, not characters — get this wrong the moment a client sends 'π' or an emoji and you will chase it for an hour. This number is how the server knows the message ended. Get it wrong and see §1.2.","RFC 9110 §8.6"],
+  accept:["Accept","The client stating which representations it can handle, with preference weights. <code>q=0.5</code> means 'I'll take text/plain, but I'd rather have JSON.' Absent q defaults to 1.0. If you can satisfy none of them, that is 406 — and 406 is one of the most commonly mis-issued codes in the wild.","RFC 9110 §12.5.1"],
+  idem:["Idempotency-Key","Not a core HTTP header — a widely adopted convention (Stripe popularised it) for making POST safe to retry. The server stores the key with the response; a repeat with the same key returns the stored response rather than creating a second line item. You build this in Week 3.","Convention, not RFC"],
+  blank:["The empty line","A bare CRLF with nothing before it. This is the single most important byte pair in the message: it is the only thing separating headers from body. Your parser reads header lines until it hits a zero-length line, and from that point the framing rules take over.","RFC 9112 §2.1"],
+  body:["Body","Opaque bytes as far as HTTP is concerned. HTTP does not know this is JSON — Content-Type says so, and Content-Type is a claim by the client, not a fact. Validate it. A client can send <code>Content-Type: application/json</code> with a body of XML, and if your parser assumes rather than checks, that is your problem.","RFC 9110 §6.4"]
+};
+
+const wire=document.getElementById('wire');
+const annot=document.getElementById('annot');
+document.querySelectorAll('.seg').forEach(s=>{
+  s.addEventListener('click',()=>{
+    document.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));
+    s.classList.add('on');
+    const a=ANNOT[s.dataset.k];
+    annot.innerHTML='<span class="k">'+a[0]+'</span><p>'+a[1]+'</p><p class="rfc">'+a[2]+'</p>';
+  });
+});
+document.getElementById('crlfBtn').addEventListener('click',e=>{
+  wire.classList.toggle('showcrlf');
+  e.target.classList.toggle('active');
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  document.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));
+  annot.innerHTML='<span class="k">Annotation</span><p>Click a region above.</p>';
+});
+
+/* framing simulator */
+const BODY='{"description":"Logo concept round","amountCents":450000}';
+const HEAD='POST /quotes/9f3a/line-items HTTP/1.1\nHost: api.freelanceforge.co.za\nContent-Type: application/json\n';
+const FRAMES={
+  correct:{
+    wire:HEAD+'Content-Length: 61\n\n'+BODY,
+    out:'<span class="ok">✓ Message complete</span>\n\nRead headers until empty line.\nContent-Length = 61.\nRead exactly 61 bytes.\n\nBody consumed in full.\nBuffer now positioned at the start of\nthe next request. Connection reusable.\n\nParse succeeds.'
+  },
+  short:{
+    wire:HEAD+'Content-Length: 40\n\n'+BODY,
+    out:'<span class="bad">✗ Framing desync</span>\n\nRead exactly 40 bytes:\n  {"description":"Logo concept round",\n\n21 bytes left unread:\n  "amountCents":450000}\n\nJSON parse fails — truncated object.\n\nWorse: those 21 bytes are still in the\nbuffer. The next parse treats\n\'"amountCents":450000}\' as a REQUEST LINE.\n\n<span class="bad">This is request smuggling.</span>'
+  },
+  long:{
+    wire:HEAD+'Content-Length: 90\n\n'+BODY,
+    out:'<span class="warn">⚠ Server blocks</span>\n\nRead 61 bytes. Waiting for 29 more.\nNothing arrives.\n\nThe socket stays open. The thread parks\non read(). The client is waiting for a\nresponse that will never come.\n\nEventually: read timeout, 408, or a\nleaked connection if you never set one.\n\n<span class="warn">Always set a read timeout.</span>'
+  },
+  chunked:{
+    wire:HEAD+'Transfer-Encoding: chunked\n\n20\n{"description":"Logo conce\n1D\npt round","amountCents":450000}\n0\n',
+    out:'<span class="ok">✓ Message complete</span>\n\nNo Content-Length needed.\n\nRead chunk size (hex) → 0x20 = 32 bytes\nRead 32 bytes, then CRLF.\nRead chunk size → 0x1D = 29 bytes\nRead 29 bytes, then CRLF.\nRead chunk size → 0 = terminator.\n\nBody reassembled: 61 bytes.\n\nLets a sender stream a body whose total\nsize it does not know in advance.'
+  },
+  none:{
+    wire:HEAD+'\n'+BODY,
+    out:'<span class="bad">✗ Body ignored</span>\n\nNo Content-Length.\nNo Transfer-Encoding.\n\nPer the rules: this request has NO body.\n\nThe server does not read the JSON at all.\nThose 61 bytes stay in the buffer and\nbecome the next "request line".\n\nYour handler receives an empty body and\nreturns 400 — while the real payload is\nsitting in the socket, about to be\nmisinterpreted.'
+  }
+};
+const fw=document.getElementById('frameWire'), fo=document.getElementById('frameOut');
+function setFrame(k){
+  fw.textContent=FRAMES[k].wire;
+  fo.innerHTML=FRAMES[k].out;
+}
+document.querySelectorAll('#frameCtrls button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#frameCtrls button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    setFrame(b.dataset.f);
+  });
+});
+setFrame('correct');
+
+/* reveals */
+document.querySelectorAll('.rv').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const r=b.nextElementSibling;
+    r.classList.toggle('on');
+    b.textContent=r.classList.contains('on')?'Hide':'Reveal';
+  });
+});
+</script>
+</body>
+</html>

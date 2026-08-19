@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§03 — Idempotency &amp; Conditional Requests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0F4; --raised:#FFFFFF; --ink:#121D2B; --soft:#4A5A6E;
+  --rule:#C7D1DC; --pen:#BE3229; --blue:#0A5AA0; --amber:#96660F; --green:#1B6B3A;
+  --wire-bg:#101A26; --wire-fg:#D3E0EC;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Archivo','IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 120px}
+header.mast{border-bottom:2px solid var(--ink);padding:56px 0 22px;margin-bottom:48px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen);font-weight:600}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(38px,7vw,68px);line-height:.96;letter-spacing:-.035em;margin:14px 0 12px}
+.standfirst{font-size:19px;color:var(--soft);max-width:60ch;margin:0}
+.meta{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--soft);margin-top:26px;letter-spacing:.04em}
+.meta b{color:var(--ink);font-weight:600}
+section{margin:64px 0}
+.sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-label span:last-child{color:var(--pen)}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,4.4vw,36px);letter-spacing:-.02em;line-height:1.1;margin:0 0 14px}
+h3{font-family:var(--disp);font-weight:600;font-size:20px;letter-spacing:-.01em;margin:38px 0 10px}
+p{margin:0 0 16px;max-width:68ch}
+code{font-family:var(--mono);font-size:.89em;background:#DDE4EC;padding:1px 5px;border-radius:2px}
+.panel{background:var(--raised);border:1px solid var(--rule);border-radius:3px;padding:24px;margin:22px 0}
+.panel-head{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:16px}
+.wire{background:var(--wire-bg);color:var(--wire-fg);font-family:var(--mono);font-size:13.5px;line-height:1.8;padding:20px;border-radius:3px;overflow-x:auto;white-space:pre-wrap}
+button{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:var(--raised);color:var(--ink);border:1px solid var(--ink);padding:9px 14px;border-radius:2px;cursor:pointer;transition:background .12s,color .12s}
+button:hover{background:var(--ink);color:var(--raised)}
+button.active{background:var(--ink);color:var(--raised)}
+button:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+
+/* retry sim */
+.sim2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.sim2{grid-template-columns:1fr}}
+.col h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 10px;font-weight:600}
+.store{font-family:var(--mono);font-size:13px;line-height:1.7;background:#F5F8FA;border:1px solid var(--rule);padding:14px;border-radius:3px;min-height:150px}
+.log{font-family:var(--mono);font-size:12.5px;line-height:1.7;background:var(--wire-bg);color:var(--wire-fg);padding:14px;border-radius:3px;min-height:150px;white-space:pre-wrap}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:2px;font-weight:600}
+.tag.safe{background:#DFF0E6;color:var(--green)}
+.tag.idem{background:#E3EEF9;color:var(--blue)}
+.tag.neither{background:#FBE4E2;color:var(--pen)}
+.rowline{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.dupe{color:var(--pen);font-weight:600}
+.dedup{color:var(--green);font-weight:600}
+
+.callout{border-left:3px solid var(--blue);background:#EDF4FB;padding:16px 20px;margin:24px 0}
+.callout.pen{border-color:var(--pen);background:#FCF1F0}
+.callout.amber{border-color:var(--amber);background:#FBF3E2}
+.callout .k{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.pen .k{color:var(--pen)}.callout.amber .k{color:var(--amber)}
+.callout p:last-child{margin:0}
+.q{border-top:1px solid var(--rule);padding:20px 0}
+.q:last-of-type{border-bottom:1px solid var(--rule)}
+.q-num{font-family:var(--mono);font-size:12px;color:var(--pen);font-weight:600}
+.q-text{font-weight:500;margin:6px 0 12px;max-width:66ch}
+.reveal{display:none;border-left:3px solid var(--rule);padding-left:16px;color:var(--soft);font-size:15px}
+.reveal.on{display:block}.reveal p{margin:0 0 10px}.reveal p:last-child{margin:0}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:20px 0}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:600}
+.yes{color:var(--green);font-weight:600}.no{color:var(--pen);font-weight:600}
+.mono{font-family:var(--mono)}
+footer{border-top:2px solid var(--ink);margin-top:80px;padding-top:20px;font-family:var(--mono);font-size:12px;color:var(--soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Craft Track · Phase 1 · Week 3</div>
+  <h1>Idempotency &amp; Conditional Requests</h1>
+  <p class="standfirst">The network drops a response. The client retries. Did it just create two invoices? Whether your API is safe to retry is not luck — it's a property you design in, and it's the same property you'll meet again at the database in Week 9.</p>
+  <div class="meta">
+    <span><b>Primary source</b> RFC 9110 §9.2.1–9.2.2, §13</span>
+    <span><b>Also</b> RFC 7386, RFC 8288</span>
+    <span><b>Deliverable</b> ETag, PreconditionEvaluator, IdempotencyKeyStore</span>
+  </div>
+</header>
+
+<!-- LAB -->
+<section>
+  <div class="sec-label"><span>Layer 1 — Lab</span><span>Manipulate before you read</span></div>
+
+  <h2>1.1 &nbsp;The retry storm</h2>
+  <p>A flaky connection. Every request is sent, succeeds on the server, but the <em>response</em> is lost, so the client retries. Watch what each method does to the resource store after three retries.</p>
+
+  <div class="panel">
+    <div class="ctrls" id="retryCtrls">
+      <button data-m="GET" class="active">GET a quote</button>
+      <button data-m="PUT">PUT (replace) a quote</button>
+      <button data-m="DELETE">DELETE a quote</button>
+      <button data-m="POST">POST a line item</button>
+      <button data-m="POST-IDEM">POST + Idempotency-Key</button>
+    </div>
+    <div class="sim2">
+      <div class="col">
+        <h4>Client (retrying ×3)</h4>
+        <div class="log" id="retryLog"></div>
+      </div>
+      <div class="col">
+        <h4>Server store after all retries</h4>
+        <div class="store" id="retryStore"></div>
+      </div>
+    </div>
+    <div id="retryVerdict" style="margin-top:16px"></div>
+  </div>
+
+  <h2>1.2 &nbsp;The lost update</h2>
+  <p>Two people open the same quote. Both edit. Both save. Toggle <code>If-Match</code> on and off and watch whether the second save silently destroys the first.</p>
+
+  <div class="panel">
+    <div class="ctrls">
+      <button id="ifmatchToggle" class="active">If-Match: ON</button>
+      <button id="runLost">Run both edits</button>
+    </div>
+    <div class="sim2">
+      <div class="col">
+        <h4>Sequence of events</h4>
+        <div class="log" id="lostLog" style="min-height:200px"></div>
+      </div>
+      <div class="col">
+        <h4>Final stored quote</h4>
+        <div class="store" id="lostStore" style="min-height:200px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout amber">
+    <span class="k">Hold this</span>
+    <p>The <code>If-Match</code> + <code>ETag</code> mechanism you just watched is <strong>optimistic concurrency control</strong>. In Week 9 you will implement the identical idea inside PostgreSQL as a <code>version</code> column, and discover they are the same concept at two altitudes. When that clicks, the whole stack stops looking like separate layers and starts looking like one idea repeated.</p>
+  </div>
+</section>
+
+<!-- CHAPTER -->
+<section>
+  <div class="sec-label"><span>Layer 2 — Chapter</span><span>The mechanism</span></div>
+
+  <h2>2 &nbsp;Two properties that decide whether retries are safe</h2>
+  <p>These two words get used loosely and they are not the same thing. Precision here is the difference between an API that survives a bad network and one that double-charges people.</p>
+
+  <table>
+    <tr><th>Method</th><th>Safe?</th><th>Idempotent?</th><th>Meaning</th></tr>
+    <tr><td class="mono">GET</td><td class="yes">yes</td><td class="yes">yes</td><td>Read only, no intended effect.</td></tr>
+    <tr><td class="mono">HEAD</td><td class="yes">yes</td><td class="yes">yes</td><td>Like GET, headers only.</td></tr>
+    <tr><td class="mono">PUT</td><td class="no">no</td><td class="yes">yes</td><td>Replace. Doing it twice lands in the same state.</td></tr>
+    <tr><td class="mono">DELETE</td><td class="no">no</td><td class="yes">yes</td><td>Remove. Second delete finds it already gone.</td></tr>
+    <tr><td class="mono">POST</td><td class="no">no</td><td class="no">no</td><td>No guarantees. This is why POST is dangerous to retry.</td></tr>
+    <tr><td class="mono">PATCH</td><td class="no">no</td><td class="no">*</td><td>Not idempotent in general — depends on the patch.</td></tr>
+  </table>
+
+  <p><strong>Safe</strong> means the request has no intended effect on server state. The client is asking a question, not issuing an instruction. Safe methods can be prefetched, cached, and retried without a second thought.</p>
+  <p><strong>Idempotent</strong> means making the request <em>N</em> times has the same effect on server state as making it once. It says nothing about the response — <code>DELETE</code> may return 204 the first time and 404 the next — it's about the resulting <em>state</em>. This is the property that makes automatic retry safe.</p>
+
+  <div class="callout">
+    <span class="k">The one that trips everyone</span>
+    <p>Every safe method is idempotent, but not every idempotent method is safe. <code>PUT</code> and <code>DELETE</code> change state (not safe) yet repeating them changes nothing further (idempotent). Reading state has no effect (safe) and therefore trivially can't have a <em>different</em> effect when repeated (idempotent). The reverse containment doesn't hold, which is the whole subtlety.</p>
+  </div>
+
+  <h3>2.1 &nbsp;Why POST is the problem child</h3>
+  <p>POST means "process this according to the resource's own semantics" — the loosest contract in HTTP. "Add a line item" creates a <em>new</em> line item each time. So the retry-after-lost-response scenario from the lab creates duplicates, and the client can't tell the difference between "it failed, retry" and "it worked but the acknowledgement got lost."</p>
+
+  <h3>2.2 &nbsp;The idempotency key pattern</h3>
+  <p>Core HTTP gives you no way to make POST idempotent. The industry convention — popularised by Stripe, now near-universal for payments — is a client-supplied key:</p>
+  <div class="wire">POST /quotes/9f3a/line-items
+Idempotency-Key: 4f21c8de-77b0-4c1a-...
+Content-Type: application/json
+
+{"description":"Logo concept round","amountCents":450000}</div>
+  <p>The server keeps a store keyed by that value. First time it sees the key: do the work, store <em>the response</em> against the key, return it. Any later request with the same key: skip the work entirely, return the stored response. The client can now retry a payment as many times as the network forces it to, and exactly one line item is created.</p>
+  <p>Three things that make this correct rather than merely plausible, and that I'll ask about at the gate:</p>
+  <p><strong>You store the response, not just a "seen" flag.</strong> A retry must get the <em>same</em> answer, including the created resource's ID. A bare "already processed" reply is useless to the client.</p>
+  <p><strong>Keys expire.</strong> You cannot keep every key forever. Pick a window (24–72h is typical) that comfortably exceeds any client's retry horizon, and document it.</p>
+  <p><strong>Concurrent duplicates race.</strong> Two retries can arrive before the first finishes. You need a lock or an atomic insert on the key, or both requests do the work. This is the hard part, and it's why the naïve version is subtly broken.</p>
+
+  <h3>2.3 &nbsp;Conditional requests: making state changes safe against each other</h3>
+  <p>Idempotency protects against <em>your own</em> retries. Conditional requests protect against <em>other people's</em> concurrent edits — the lost update from the lab.</p>
+  <p>An <strong>ETag</strong> is an opaque validator the server attaches to a representation — a version fingerprint. Change the resource, change the ETag.</p>
+  <div class="wire">GET /quotes/9f3a  →  200 OK
+ETag: "v7"
+
+PUT /quotes/9f3a
+If-Match: "v7"       ← "only apply this if the quote is still at v7"</div>
+  <p>If the resource still matches, the write proceeds and the ETag advances. If someone else already wrote — moving it to <code>"v8"</code> — the precondition fails and the server returns <strong>412 Precondition Failed</strong>. The second writer is forced to re-read, see the other person's change, and decide what to do, instead of silently clobbering it.</p>
+
+  <table>
+    <tr><th>Header</th><th>Question it asks</th><th>Typical use</th></tr>
+    <tr><td class="mono">If-Match</td><td>Is it still this version?</td><td>Safe updates — 412 if not</td></tr>
+    <tr><td class="mono">If-None-Match</td><td>Is it <em>not</em> any version I hold?</td><td>Caching — 304 if unchanged</td></tr>
+    <tr><td class="mono">If-Modified-Since</td><td>Changed since this time?</td><td>Weaker, time-based caching</td></tr>
+  </table>
+
+  <h3>2.4 &nbsp;Caching and the 304</h3>
+  <p>The same ETag machinery drives caching from the other direction. A client that already holds <code>"v7"</code> sends <code>If-None-Match: "v7"</code> on its next GET. If nothing changed, the server returns <strong>304 Not Modified</strong> with no body, and the client reuses what it has. You save the payload; the validation round-trip still happens.</p>
+  <p><code>Cache-Control</code> governs whether a round-trip is needed at all: <code>max-age</code> lets a client skip revalidation for a while; <code>no-cache</code> forces revalidation every time (note: it does <em>not</em> mean "don't store"); <code>no-store</code> is the one that means don't keep it. Getting these three confused is why sensitive data ends up in a proxy cache.</p>
+
+  <h3>2.5 &nbsp;PUT vs PATCH, and JSON Merge Patch</h3>
+  <p><strong>PUT replaces the whole representation.</strong> Omit a field and you've set it to absent — PUT is not partial update, and treating it as such silently deletes data. <strong>PATCH applies a change description.</strong> The most common format is JSON Merge Patch (RFC 7386): send only the fields you're changing; <code>null</code> means "remove this field."</p>
+  <div class="wire">PATCH /quotes/9f3a
+Content-Type: application/merge-patch+json
+
+{"clientNote": "Rush job", "discountCents": null}
+   ↑ set the note                ↑ remove the discount</div>
+  <p>The trap in Merge Patch: because <code>null</code> means delete, it cannot represent "set this field to the JSON value null." For most domains that's fine. When it isn't, you need JSON Patch (RFC 6902) instead, which is more powerful and much fiddlier. Know that the choice exists.</p>
+
+  <h3>2.6 &nbsp;Pagination — offset breaks under writes</h3>
+  <p>Collections need paging. The obvious way — <code>?offset=40&limit=20</code> — has a real bug: if a row is inserted or deleted while a client pages through, the offset shifts under them, so they skip a record or see one twice. Fine for a static report, wrong for a live list.</p>
+  <p><strong>Cursor pagination</strong> fixes it: the server returns an opaque cursor pointing at "the row after this stable key" (a timestamp-plus-id, say), and the client asks for "the next 20 after this cursor." Inserts and deletes elsewhere in the collection no longer disturb the client's position. Deliver the cursor as a <code>Link</code> header (RFC 8288) with <code>rel="next"</code>, so paging is discoverable rather than something clients hand-assemble.</p>
+</section>
+
+<!-- PROOF -->
+<section>
+  <div class="sec-label"><span>Layer 3 — Proof</span><span>Answer before revealing</span></div>
+  <h2>3 &nbsp;Self-test</h2>
+
+  <div class="q">
+    <div class="q-num">Q1 — the gate question</div>
+    <div class="q-text">Two clients GET the same quote, both see ETag <code>"v7"</code>, both edit, both PUT with <code>If-Match: "v7"</code>. Walk through exactly what each receives, and what state the quote ends in.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>Client A's PUT arrives first. The quote still matches <code>"v7"</code>, so the write applies and the ETag advances to <code>"v8"</code>. A gets 200 (or 204).</p><p>Client B's PUT arrives second, still carrying <code>If-Match: "v7"</code>. The quote is now at <code>"v8"</code>, so the precondition fails: B gets <strong>412 Precondition Failed</strong> and its write is rejected. B must re-GET, see A's change at <code>"v8"</code>, reconcile, and retry with the fresh ETag. The final state contains A's edit and B was prevented from silently overwriting it — which, without <code>If-Match</code>, is exactly what would have happened. This is the answer you carry into Week 9; the version column does the same job in the database.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q2</div>
+    <div class="q-text">Your idempotency store keeps only a set of "keys already seen." A payment POST is retried after its response was lost. What does the client get, and why is it not good enough?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>The server sees the key, knows it's a duplicate, and returns something like 409 or an empty 200 — but it cannot return the <em>original result</em>, because it never stored it. The client wanted the created line item's ID and the original status. It now has neither, and can't tell whether the first attempt truly succeeded. You must store the full response against the key, so a retry is indistinguishable from getting the original reply.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q3</div>
+    <div class="q-text">Is PUT idempotent? Is a PUT that sets a field to <code>serverTimestamp = now()</code> idempotent? Reconcile the two answers.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>PUT is <em>defined</em> as idempotent — the method contract promises it. But idempotency is about the <em>effect the client intends to cause</em>, i.e. replacing the resource with the representation the client supplied. If your handler injects <code>now()</code> on every call, you have added a side effect the client did not request, and repeated PUTs land in different states. The fix is not "PUT isn't idempotent" — it's "don't put non-deterministic server-side effects in an idempotent handler." Server-assigned values like timestamps belong to creation, or should be derived deterministically, not stamped on every replace.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q4</div>
+    <div class="q-text">A client sends <code>PUT /quotes/9f3a</code> with a body containing only <code>{"clientNote": "urgent"}</code>, intending to add a note. The quote had five line items. What happens, and which method did they want?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>PUT replaces the entire representation. The body has no line items, so a correct server sets the quote to have no line items — five items deleted, silently, by someone who thought they were adding a note. They wanted <strong>PATCH</strong> with a merge-patch body <code>{"clientNote":"urgent"}</code>, which changes only the named field. This is the single most common data-loss bug caused by misunderstanding PUT, and it's why "PUT for partial update" must fail review.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q5</div>
+    <div class="q-text"><code>Cache-Control: no-cache</code> — does it mean "do not cache this"? If not, which directive does?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>No. <code>no-cache</code> means "you may store it, but you must revalidate with the origin before every reuse" — a 304 round-trip. The directive that actually means "do not keep a copy at all" is <code>no-store</code>, and that's the one you want for anything sensitive. The naming is genuinely misleading and it's a routine source of leaked private data sitting in an intermediary cache.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q6</div>
+    <div class="q-text">Why does offset pagination skip or duplicate rows under concurrent writes, and how does a cursor avoid it? Give the concrete failure.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>Offset counts positions, not rows. A client reads rows 1–20 (<code>offset=0</code>), then asks for <code>offset=20</code>. If a new quote is inserted at the top in between, every row shifts down one, so the row that <em>was</em> at position 20 is now at 21 — the client's <code>offset=20</code> re-reads position 20, which is now the old row 19, a duplicate. A deletion causes the mirror-image skip. A cursor anchors to a stable key ("everything after created_at=…, id=…") rather than a position, so inserts and deletes elsewhere don't move the client's anchor. Position is relative; a key is absolute.</p></div>
+  </div>
+
+  <h3>Gate criteria for this week — and the Phase 1 viva</h3>
+  <table>
+    <tr><th>#</th><th>Criterion</th></tr>
+    <tr><td>1</td><td><code>ETag</code> generation is deterministic for a given resource state and changes when the state changes.</td></tr>
+    <tr><td>2</td><td><code>PreconditionEvaluator</code> handles <code>If-Match</code> (→ 412) and <code>If-None-Match</code> (→ 304) correctly, including the <code>*</code> wildcard.</td></tr>
+    <tr><td>3</td><td><code>IdempotencyKeyStore</code> stores the full response, expires keys, and handles a concurrent duplicate without doing the work twice — proven by a test that fires two requests with one key.</td></tr>
+    <tr><td>4</td><td>PATCH uses <code>application/merge-patch+json</code> semantics; a PATCH that omits a field leaves it untouched, and <code>null</code> removes it.</td></tr>
+    <tr><td>5</td><td>Collection endpoints paginate by cursor and expose <code>Link: rel="next"</code>.</td></tr>
+    <tr><td>6</td><td><strong>Viva:</strong> you can deliver the Q1 walkthrough out loud, unprompted, and then say — without notes — how the same idea reappears as a database version column. That sentence is your ticket into Phase 2.</td></tr>
+  </table>
+</section>
+
+<footer>
+  <span>Craft Track §03 — Idempotency &amp; Conditional Requests</span>
+  <span>Phase 1 complete · Next: Gate 1, then §04</span>
+</footer>
+</div>
+
+<script>
+/* ---------- retry storm ---------- */
+const META={
+  GET:['safe','SAFE + IDEMPOTENT'],
+  PUT:['idem','IDEMPOTENT'],
+  DELETE:['idem','IDEMPOTENT'],
+  POST:['neither','NEITHER'],
+  'POST-IDEM':['idem','MADE IDEMPOTENT']
+};
+function retrySim(m){
+  const store={quotes:{'9f3a':{total:4600,items:2}},lineItems:2};
+  let log='', tries=3;
+  const [cls,label]=META[m];
+  log+='method is '+label+'\n\n';
+  if(m==='GET'){
+    for(let i=1;i<=tries;i++) log+='try '+i+'  GET /quotes/9f3a → 200 (response lost)\n';
+    log+='\nno writes. store untouched.';
+  }else if(m==='PUT'){
+    for(let i=1;i<=tries;i++){store.quotes['9f3a'].total=5000;log+='try '+i+'  PUT total=5000 → 200 (lost)\n';}
+    log+='\neach retry writes the SAME value.\nend state identical to one call.';
+  }else if(m==='DELETE'){
+    for(let i=1;i<=tries;i++){
+      if(store.quotes['9f3a']){delete store.quotes['9f3a'];log+='try '+i+'  DELETE → 204 (lost)\n';}
+      else log+='try '+i+'  DELETE → 404 already gone (lost)\n';
+    }
+    log+='\nstatus differs, STATE does not.\nthat is idempotency.';
+  }else if(m==='POST'){
+    for(let i=1;i<=tries;i++){store.lineItems++;log+='<span class="dupe">try '+i+'  POST line-item → 201 (lost)</span>\n';}
+    log+='\n<span class="dupe">three line items created.\nthe client wanted one.</span>';
+  }else{
+    let stored=null;
+    for(let i=1;i<=tries;i++){
+      if(!stored){store.lineItems++;stored='201 id=li_88';log+='<span class="dedup">try '+i+'  key=4f21… new → 201 id=li_88 (lost)</span>\n';}
+      else log+='<span class="dedup">try '+i+'  key=4f21… seen → replay '+stored+'</span>\n';
+    }
+    log+='\n<span class="dedup">one line item. every retry gets\nthe same stored response.</span>';
+  }
+  document.getElementById('retryLog').innerHTML=log;
+  document.getElementById('retryStore').innerHTML=renderStore(store);
+  const v=(m==='POST')
+    ?'<div class="callout pen"><span class="k">Result</span><p>Retrying an unguarded POST duplicated the resource three times. On a payment endpoint this is a triple charge. POST cannot be retried safely without help.</p></div>'
+    :(m==='POST-IDEM')
+    ?'<div class="callout"><span class="k">Result</span><p>The idempotency key collapsed three deliveries into one effect. This is how payment APIs survive the network — and note it required <em>storing the response</em>, not just remembering the key.</p></div>'
+    :'<div class="callout"><span class="k">Result</span><p>'+label+' methods are safe to retry by construction. Your client library can retry them automatically, which is exactly why the method contract matters.</p></div>';
+  document.getElementById('retryVerdict').innerHTML=v;
+}
+function renderStore(s){
+  let out='quotes:\n';
+  const ids=Object.keys(s.quotes);
+  if(ids.length===0) out+='  (empty — quote deleted)\n';
+  else ids.forEach(id=>out+='  '+id+'  total='+s.quotes[id].total+'\n');
+  out+='\nline items created: <b>'+s.lineItems+'</b>';
+  return out;
+}
+document.querySelectorAll('#retryCtrls button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#retryCtrls button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); retrySim(b.dataset.m);
+}));
+retrySim('GET');
+
+/* ---------- lost update ---------- */
+let ifMatch=true;
+document.getElementById('ifmatchToggle').addEventListener('click',function(){
+  ifMatch=!ifMatch;
+  this.textContent='If-Match: '+(ifMatch?'ON':'OFF');
+  this.classList.toggle('active',ifMatch);
+});
+document.getElementById('runLost').addEventListener('click',()=>{
+  let etag='v7';
+  let quote={total:4600,note:'—'};
+  let log='', store;
+  log+='both clients GET /quotes/9f3a\n→ 200  ETag: "'+etag+'"\n\n';
+  log+='A edits: note = "Approved by A"\n';
+  log+='B edits: total = 9200\n\n';
+  if(ifMatch){
+    log+='A PUT  If-Match:"v7"\n';
+    quote.note='Approved by A'; etag='v8';
+    log+='<span class="dedup">→ matches. 200. now ETag "v8"</span>\n\n';
+    log+='B PUT  If-Match:"v7"\n';
+    log+='<span class="dedup">→ "v7" ≠ "v8". 412 Precondition Failed.</span>\n';
+    log+='B\'s write is REJECTED.\n\n';
+    log+='B must re-GET, see A\'s note,\nreconcile, retry with "v8".';
+    store='total: 4600  (B blocked)\nnote:  Approved by A\nETag:  "v8"\n\n<span class="dedup">A\'s change preserved.\nNothing silently lost.</span>';
+  }else{
+    log+='A PUT (no precondition)\n';
+    quote.note='Approved by A';
+    log+='→ 200. note saved.\n\n';
+    log+='B PUT (no precondition)\n';
+    quote={total:9200,note:'—'};
+    log+='<span class="dupe">→ 200. B replaces everything.</span>\n\n';
+    log+='<span class="dupe">B never saw A\'s note.\nB\'s PUT had no note field,\nso the note is gone.</span>';
+    store='total: 9200\nnote:  —\n\n<span class="dupe">A\'s approval was silently\noverwritten. Nobody was told.\nThis is the lost update.</span>';
+  }
+  document.getElementById('lostLog').innerHTML=log;
+  document.getElementById('lostStore').innerHTML=store;
+});
+
+document.querySelectorAll('.rv').forEach(b=>b.addEventListener('click',()=>{
+  const r=b.nextElementSibling; r.classList.toggle('on');
+  b.textContent=r.classList.contains('on')?'Hide':'Reveal';
+}));
+</script>
+</body>
+</html>

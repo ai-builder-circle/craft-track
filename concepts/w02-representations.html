@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>§02 — Representations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0F4; --raised:#FFFFFF; --ink:#121D2B; --soft:#4A5A6E;
+  --rule:#C7D1DC; --pen:#BE3229; --blue:#0A5AA0; --amber:#96660F; --green:#1B6B3A;
+  --wire-bg:#101A26; --wire-fg:#D3E0EC;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Archivo','IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 120px}
+header.mast{border-bottom:2px solid var(--ink);padding:56px 0 22px;margin-bottom:48px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen);font-weight:600}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(42px,8vw,76px);line-height:.94;letter-spacing:-.035em;margin:14px 0 12px}
+.standfirst{font-size:19px;color:var(--soft);max-width:60ch;margin:0}
+.meta{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--soft);margin-top:26px;letter-spacing:.04em}
+.meta b{color:var(--ink);font-weight:600}
+section{margin:64px 0}
+.sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-label span:last-child{color:var(--pen)}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,4.4vw,36px);letter-spacing:-.02em;line-height:1.1;margin:0 0 14px}
+h3{font-family:var(--disp);font-weight:600;font-size:20px;letter-spacing:-.01em;margin:38px 0 10px}
+p{margin:0 0 16px;max-width:68ch}
+code{font-family:var(--mono);font-size:.89em;background:#DDE4EC;padding:1px 5px;border-radius:2px}
+.panel{background:var(--raised);border:1px solid var(--rule);border-radius:3px;padding:24px;margin:22px 0}
+.panel-head{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:16px}
+.wire{background:var(--wire-bg);color:var(--wire-fg);font-family:var(--mono);font-size:13.5px;line-height:1.8;padding:20px;border-radius:3px;overflow-x:auto;white-space:pre-wrap}
+button{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:var(--raised);color:var(--ink);border:1px solid var(--ink);padding:9px 14px;border-radius:2px;cursor:pointer;transition:background .12s,color .12s}
+button:hover{background:var(--ink);color:var(--raised)}
+button.active{background:var(--ink);color:var(--raised)}
+button:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+
+/* decision tree */
+.tree-q{font-family:var(--disp);font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px;line-height:1.25}
+.tree-sub{color:var(--soft);font-size:15px;margin:0 0 18px}
+.tree-opts{display:flex;flex-direction:column;gap:8px}
+.tree-opts button{text-align:left;text-transform:none;letter-spacing:0;font-family:var(--sans);font-size:15px;padding:12px 16px}
+.tree-path{font-family:var(--mono);font-size:11.5px;color:var(--soft);letter-spacing:.05em;margin-bottom:18px;min-height:16px}
+.verdict{border-left:4px solid var(--pen);background:#FCF1F0;padding:20px 22px}
+.verdict .code{font-family:var(--disp);font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--pen)}
+.verdict .name{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--pen);margin:6px 0 14px}
+.verdict p{margin:0 0 10px;font-size:15px}
+.verdict p:last-child{margin:0}
+
+/* negotiation */
+.neg-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+input[type=text]{font-family:var(--mono);font-size:13px;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;flex:1;min-width:260px;background:#F7FAFC;color:var(--ink)}
+input[type=text]:focus{outline:2px solid var(--blue);outline-offset:-1px}
+.neg-out{font-family:var(--mono);font-size:13px;line-height:1.9;background:#F5F8FA;border:1px solid var(--rule);padding:16px;border-radius:3px}
+.bar{display:inline-block;height:9px;background:var(--blue);border-radius:1px;vertical-align:middle;margin:0 8px}
+.win{color:var(--green);font-weight:600}
+.lose{color:var(--soft)}
+.none{color:var(--pen);font-weight:600}
+
+.callout{border-left:3px solid var(--blue);background:#EDF4FB;padding:16px 20px;margin:24px 0}
+.callout.pen{border-color:var(--pen);background:#FCF1F0}
+.callout .k{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;color:var(--blue)}
+.callout.pen .k{color:var(--pen)}
+.callout p:last-child{margin:0}
+.q{border-top:1px solid var(--rule);padding:20px 0}
+.q:last-of-type{border-bottom:1px solid var(--rule)}
+.q-num{font-family:var(--mono);font-size:12px;color:var(--pen);font-weight:600}
+.q-text{font-weight:500;margin:6px 0 12px;max-width:66ch}
+.reveal{display:none;border-left:3px solid var(--rule);padding-left:16px;color:var(--soft);font-size:15px}
+.reveal.on{display:block}
+.reveal p{margin:0 0 10px}.reveal p:last-child{margin:0}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:20px 0}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:600}
+.num{font-family:var(--mono);font-weight:600;color:var(--pen);white-space:nowrap}
+footer{border-top:2px solid var(--ink);margin-top:80px;padding-top:20px;font-family:var(--mono);font-size:12px;color:var(--soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Craft Track · Phase 1 · Week 2</div>
+  <h1>Representations</h1>
+  <p class="standfirst">A resource is a concept. A representation is a rendering of it, at a moment, in a format. Confusing the two is why most APIs return 200 with an error inside the body.</p>
+  <div class="meta">
+    <span><b>Primary source</b> RFC 9110 §3.2, §8, §12, §15</span>
+    <span><b>Also</b> RFC 9457</span>
+    <span><b>Deliverable</b> HttpStatus, AcceptHeader, ProblemDetail</span>
+  </div>
+</header>
+
+<section>
+  <div class="sec-label"><span>Layer 1 — Lab</span><span>Manipulate before you read</span></div>
+  <h2>1.1 &nbsp;The status decision tree</h2>
+  <p>Status codes are not a lookup table you memorise. They are the output of a decision procedure. Walk it. When you build <code>HttpStatus.java</code>, this tree is what your Javadoc conditions must encode.</p>
+
+  <div class="panel">
+    <div class="tree-path" id="path"></div>
+    <div id="treeBox"></div>
+    <div class="ctrls" style="margin-top:18px"><button id="restart">Start over</button></div>
+  </div>
+
+  <h2>1.2 &nbsp;Content negotiation</h2>
+  <p>Edit the Accept header. The server here can produce <code>application/json</code>, <code>application/xml</code> and <code>text/csv</code>. Work out what should win before you look at the result.</p>
+
+  <div class="panel">
+    <div class="panel-head">Accept header sent by client</div>
+    <div class="neg-row">
+      <input type="text" id="acceptIn" value="application/json;q=0.8, text/csv, application/xml;q=0.3">
+      <button id="negRun">Evaluate</button>
+    </div>
+    <div class="ctrls">
+      <button data-a="application/json">Simple JSON</button>
+      <button data-a="*/*">Wildcard</button>
+      <button data-a="text/*;q=0.9, application/json;q=0.4">Type wildcard</button>
+      <button data-a="application/pdf">Unsatisfiable</button>
+      <button data-a="application/json;q=0, */*;q=0.1">q=0 trap</button>
+    </div>
+    <div class="neg-out" id="negOut"></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label"><span>Layer 2 — Chapter</span><span>The mechanism</span></div>
+
+  <h2>2 &nbsp;Resource, representation, and why it matters</h2>
+  <p>Fielding's definition: a <strong>resource</strong> is any concept that can be identified — a quote, the set of quotes for a client, "today's exchange rate." A <strong>representation</strong> is a concrete byte sequence describing that resource's state at a point in time, in some format.</p>
+  <p>The URL identifies the resource. The <code>Content-Type</code> describes the representation. One resource can have many representations: the same quote as JSON, as CSV, as a PDF, in English or Afrikaans. They are the same resource, so they share a URL, and the client says which rendering it wants via <code>Accept</code>.</p>
+  <p>This matters practically because it tells you what belongs in the URL and what does not. <code>/quotes/9f3a?format=json</code> is putting representation choice into resource identity. It works, plenty of APIs do it, and it means your cache now has two entries for one resource. Use the headers; they exist for this.</p>
+
+  <h3>2.1 &nbsp;Negotiation mechanics</h3>
+  <p>The <code>Accept</code> header is a list of media ranges with quality weights:</p>
+  <div class="wire">Accept: text/csv, application/json;q=0.8, application/xml;q=0.3</div>
+  <p>Rules that catch people out:</p>
+  <p><strong>Absent <code>q</code> means <code>q=1.0</code>.</strong> In the header above, CSV is the client's first choice even though it's written without a weight — a lot of people read left-to-right and assume JSON wins because it has the visible number.</p>
+  <p><strong>Specificity breaks ties, weight does not.</strong> <code>application/json</code> beats <code>application/*</code> beats <code>*/*</code> at equal q.</p>
+  <p><strong><code>q=0</code> means "not acceptable."</strong> It is an explicit veto, not a low preference. <code>application/json;q=0</code> forbids JSON.</p>
+  <p><strong>You choose, not the client.</strong> Negotiation is a preference expression. If the client's top choice is expensive and its second is cheap, you may serve the second — you just have to say which one you sent, in <code>Content-Type</code>, and add <code>Vary: Accept</code> so caches don't serve the CSV to the next client who wanted JSON. Forgetting <code>Vary</code> is one of the most common caching bugs in production APIs.</p>
+
+  <div class="callout">
+    <span class="k">Accept vs Content-Type</span>
+    <p>They point in opposite directions and both can appear on the same message. <strong>Content-Type</strong> describes the body attached to <em>this</em> message. <strong>Accept</strong> describes what the sender wants back. A POST carries both: "here is JSON, send me back CSV." Get these confused and you will return 415 when you meant 406.</p>
+  </div>
+
+  <h3>2.2 &nbsp;Status codes as a decision procedure</h3>
+  <p>Five classes. The first digit is the contract; the rest is detail.</p>
+  <table>
+    <tr><th>Class</th><th>Meaning</th><th>Who is at fault</th></tr>
+    <tr><td class="num">1xx</td><td>Interim — keep waiting</td><td>Nobody</td></tr>
+    <tr><td class="num">2xx</td><td>Understood and acted on</td><td>Nobody</td></tr>
+    <tr><td class="num">3xx</td><td>Further action needed to complete</td><td>Nobody</td></tr>
+    <tr><td class="num">4xx</td><td>The request was wrong</td><td>The client — retrying unchanged will fail again</td></tr>
+    <tr><td class="num">5xx</td><td>The request was fine, the server failed</td><td>The server — retrying may succeed</td></tr>
+  </table>
+  <p>That last column is the whole point. A client's retry logic reads the first digit and decides whether to give up or back off and try again. When you return 500 for a validation failure, you have told every well-behaved client in the world to retry a request that can never succeed. When you return 200 with <code>{"error": "not found"}</code>, you have told caches to store the error and monitoring to record a success.</p>
+
+  <h3>2.3 &nbsp;The codes you will actually need</h3>
+  <table>
+    <tr><th>Code</th><th>Exact condition</th></tr>
+    <tr><td class="num">200</td><td>Request succeeded, response has a body representing the result.</td></tr>
+    <tr><td class="num">201</td><td>A new resource was created. <strong>Must</strong> include <code>Location</code> pointing at it.</td></tr>
+    <tr><td class="num">202</td><td>Accepted for processing, not yet done. Only use if you can tell them how to check.</td></tr>
+    <tr><td class="num">204</td><td>Succeeded, deliberately no body. A body here is a protocol violation.</td></tr>
+    <tr><td class="num">400</td><td>Malformed — the server could not parse or the shape is invalid. Not "business rule failed."</td></tr>
+    <tr><td class="num">401</td><td>Not authenticated, or credentials invalid. Requires a <code>WWW-Authenticate</code> header.</td></tr>
+    <tr><td class="num">403</td><td>Authenticated, understood, refused. Re-authenticating will not help.</td></tr>
+    <tr><td class="num">404</td><td>No such resource — or you are hiding a 403. Both are legitimate.</td></tr>
+    <tr><td class="num">405</td><td>Resource exists, method not allowed on it. <strong>Must</strong> include <code>Allow</code>.</td></tr>
+    <tr><td class="num">406</td><td>Cannot produce anything in the client's Accept range.</td></tr>
+    <tr><td class="num">409</td><td>Conflict with current state. Your quote-already-sent case lands here.</td></tr>
+    <tr><td class="num">412</td><td>A precondition failed. This is Week 3's code.</td></tr>
+    <tr><td class="num">415</td><td>Cannot consume the body's Content-Type.</td></tr>
+    <tr><td class="num">422</td><td>Parsed fine, semantically invalid. Contested — see below.</td></tr>
+    <tr><td class="num">429</td><td>Rate limited. Should include <code>Retry-After</code>.</td></tr>
+    <tr><td class="num">500</td><td>Unhandled server fault. Never deliberate.</td></tr>
+    <tr><td class="num">503</td><td>Temporarily unavailable — overload, maintenance. Include <code>Retry-After</code>.</td></tr>
+  </table>
+
+  <div class="callout pen">
+    <span class="k">The 400 vs 422 argument — have a position</span>
+    <p>422 originates in WebDAV, not core HTTP. One camp says syntax errors are 400 and semantic errors are 422; the other says 400 covers both and 422 adds nothing a client acts on differently. Both are defensible. What is <em>not</em> defensible is using them inconsistently within one API. Pick one, write <code>ADR-002</code>, and I will ask you to defend it at the gate — I don't care which you chose, I care that you chose.</p>
+  </div>
+
+  <h3>2.4 &nbsp;401 and 403 are not "not logged in" and "no permission"</h3>
+  <p>The names are historically bad. <strong>401 Unauthorized</strong> actually means unauthenticated: I don't know who you are, or the credentials you gave are wrong. It is required to carry <code>WWW-Authenticate</code> telling the client how to authenticate. <strong>403 Forbidden</strong> means I know who you are and the answer is still no; retrying with the same identity is pointless.</p>
+  <p>The interesting case is when a resource exists but this user may not know that it exists. Returning 403 leaks existence — an attacker enumerating <code>/quotes/{id}</code> learns which IDs are real. Returning 404 hides it. Both are correct HTTP; it is a security decision, not a protocol one, and you will make it deliberately in Week 13.</p>
+
+  <h3>2.5 &nbsp;Error bodies: RFC 9457 Problem Details</h3>
+  <p>The status code tells a machine what class of thing went wrong. It cannot tell a developer <em>which field</em> was invalid. That's what the body is for — and there is a standard so you don't invent your own shape.</p>
+  <div class="wire">HTTP/1.1 409 Conflict
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.freelanceforge.co.za/problems/quote-not-editable",
+  "title": "Quote cannot be edited",
+  "status": 409,
+  "detail": "Quote QF-2026-0184 was sent on 2026-08-14 and is no longer editable.",
+  "instance": "/quotes/9f3a",
+  "quoteStatus": "SENT"
+}</div>
+  <p>Note the media type: <code>application/problem+json</code>, not <code>application/json</code>. That's how a client knows to parse it as a problem rather than as your normal payload.</p>
+  <p>Field discipline: <code>type</code> is a stable URI identifying the <em>kind</em> of problem — it is the thing clients branch on, so it must never change. <code>title</code> is a human summary for that type and stays constant. <code>detail</code> is specific to this occurrence and may vary. Extension members (<code>quoteStatus</code> above) are allowed and are where you put machine-usable specifics.</p>
+
+  <div class="callout pen">
+    <span class="k">What never goes in a problem body</span>
+    <p>Stack traces. SQL. Internal hostnames. Class names. Framework versions. Whether a username exists. Every one of those is reconnaissance, and 5xx handlers leaking them are one of the most reliably productive things a penetration tester checks. Log the detail, return the reference: <code>"detail": "Internal error. Reference: 7f2a-9c11."</code></p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label"><span>Layer 3 — Proof</span><span>Answer before revealing</span></div>
+  <h2>3 &nbsp;Self-test</h2>
+
+  <div class="q">
+    <div class="q-num">Q1</div>
+    <div class="q-text">A client POSTs a line item to a quote that has already been sent. Your domain refuses. What status, and why not 400?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><strong>409 Conflict.</strong> The request was perfectly well-formed — correct syntax, valid fields, existing resource. Nothing about the request needs fixing. What's wrong is the <em>state of the resource</em>, which the client could not have known and might not be able to change. 400 says "your message was broken." 409 says "your message was fine, the target isn't in a state that permits it." A client can act differently on those: re-read the quote and show the user its status.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q2</div>
+    <div class="q-text"><code>Accept: text/csv, application/json;q=0.8</code>. Your server can produce both, but CSV generation takes 4 seconds and JSON takes 20ms. What may you legitimately do, and what must you send if you do it?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>You may serve JSON. Negotiation expresses preference, not obligation — the client said it accepts JSON at 0.8, so JSON is acceptable. You <strong>must</strong> set <code>Content-Type: application/json</code> so the client knows what it got, and you <strong>must</strong> set <code>Vary: Accept</code> so a shared cache doesn't hand this JSON response to the next client who asked for CSV only.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q3</div>
+    <div class="q-text">Distinguish 406 and 415 in one sentence each, then give a single request that could plausibly trigger either.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><strong>415</strong>: I cannot consume the body you sent me. <strong>406</strong>: I cannot produce anything you said you'd accept.</p><p>One request triggers both possibilities: <code>POST /quotes</code> with <code>Content-Type: application/xml</code> and <code>Accept: application/pdf</code>, on a server that speaks only JSON. Check the inbound first — 415, because you can't even read the request, so there's no point negotiating a response you'll never generate.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q4</div>
+    <div class="q-text">Your 404 handler returns <code>{"error":"Quote not found"}</code> with <code>Content-Type: application/json</code>. Name two things wrong with this, protocol-wise.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p>(1) The media type should be <code>application/problem+json</code> — a client cannot distinguish an error body from a normal payload by content type alone, so generic client code has to branch on status and then guess at the shape. (2) The body is an ad-hoc structure with no <code>type</code> URI, so clients must string-match on <code>error</code> text to branch. The moment you rephrase that message, every client breaks. A stable <code>type</code> URI is the contract; prose is not.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q5</div>
+    <div class="q-text">DELETE succeeds. Should you return 204 or 200 with the deleted representation? Argue both, then commit.</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><strong>204:</strong> the resource is gone, there is nothing to represent, and returning the corpse invites clients to depend on it. Cheapest, cleanest. <strong>200 with body:</strong> useful when deletion is soft, or when the client needs the final state for an undo affordance or an audit display, saving a round trip.</p><p>Either is defensible. The wrong answers are 200 with an empty body (lying about having a representation) and 204 with a body (a protocol violation — some intermediaries will strip it and some clients will hang). Write it in the ADR.</p></div>
+  </div>
+
+  <div class="q">
+    <div class="q-num">Q6</div>
+    <div class="q-text">Why must 201 carry <code>Location</code> and 405 carry <code>Allow</code>? What breaks without them?</div>
+    <button class="rv">Reveal</button>
+    <div class="reveal"><p><code>Location</code> on 201: the client asked you to create something and does not know its identity — the server assigned it. Without <code>Location</code> the client must guess the URL or re-query a collection to find what it just made. It's the only way to learn the identifier reliably.</p><p><code>Allow</code> on 405: you've told the client "not that method" without saying which methods work, so the only recovery is brute force. <code>Allow: GET, PUT, DELETE</code> turns a dead end into a correction. Both are <em>required</em> by the spec, not conventions.</p></div>
+  </div>
+
+  <h3>Gate criteria for this week</h3>
+  <table>
+    <tr><th>#</th><th>Criterion</th></tr>
+    <tr><td>1</td><td><code>HttpStatus</code> is an enum. Every constant has a Javadoc line stating the exact condition for returning it. No condition, no constant.</td></tr>
+    <tr><td>2</td><td><code>AcceptHeader</code> parses media ranges with q-values, handles absent q, wildcards, and q=0, and returns the best available match or none.</td></tr>
+    <tr><td>3</td><td><code>ProblemDetail</code> emits <code>application/problem+json</code> with type, title, status, detail, instance, plus extension members.</td></tr>
+    <tr><td>4</td><td>Every non-2xx response in <code>QuoteResource</code> returns a problem document. No bare strings, no HTML, no stack traces — verified by a test that asserts the 500 handler leaks nothing.</td></tr>
+    <tr><td>5</td><td>Responses that negotiated set <code>Vary: Accept</code>.</td></tr>
+    <tr><td>6</td><td><code>docs/status-code-decision-tree.md</code> exists and matches what the code actually does.</td></tr>
+    <tr><td>7</td><td><code>ADR-002</code> commits to a 400/422 position and defends it.</td></tr>
+  </table>
+</section>
+
+<footer>
+  <span>Craft Track §02 — Representations</span>
+  <span>Next: §03 Idempotency &amp; conditional requests</span>
+</footer>
+</div>
+
+<script>
+/* ---------- decision tree ---------- */
+const T={
+  start:{q:"Did the server successfully understand and act on the request?",sub:"Start at the top. Be honest about which side of the client/server line the failure sits on.",o:[
+    {t:"Yes — it worked",n:"ok"},
+    {t:"No — the request itself was the problem",n:"client"},
+    {t:"No — the request was fine, my server broke",n:"server"},
+    {t:"Not yet — I've accepted it but haven't finished",n:"async"}
+  ]},
+  ok:{q:"Did the request create a new resource?",o:[
+    {t:"Yes, a new resource now exists at a new URL",r:"201"},
+    {t:"No — but I have a representation to return",r:"200"},
+    {t:"No — and there is deliberately nothing to return",r:"204"}
+  ]},
+  async:{q:"Can the client find out when it's done?",o:[
+    {t:"Yes — I can give them a status URL",r:"202"},
+    {t:"No, I just fire and forget",r:"202-bad"}
+  ]},
+  client:{q:"What kind of client problem?",o:[
+    {t:"I couldn't parse it / the shape is wrong",r:"400"},
+    {t:"I don't know who they are, or credentials failed",r:"401"},
+    {t:"I know who they are and I'm refusing",n:"forbid"},
+    {t:"The resource doesn't exist",r:"404"},
+    {t:"The resource exists but not with that method",r:"405"},
+    {t:"A content type problem",n:"ctype"},
+    {t:"It parsed, but it conflicts with current state",n:"conflict"},
+    {t:"They're sending too many requests",r:"429"}
+  ]},
+  forbid:{q:"Would revealing that the resource exists leak information to someone who shouldn't have it?",sub:"This is a security decision dressed as a protocol one.",o:[
+    {t:"No — it's fine for them to know it exists",r:"403"},
+    {t:"Yes — they shouldn't learn this ID is real",r:"404-hide"}
+  ]},
+  ctype:{q:"Which direction?",o:[
+    {t:"I can't consume the body they sent",r:"415"},
+    {t:"I can't produce anything in their Accept",r:"406"}
+  ]},
+  conflict:{q:"Was the conflict caused by a precondition the client supplied?",o:[
+    {t:"Yes — they sent If-Match and it didn't match",r:"412"},
+    {t:"No — the resource state simply forbids this",r:"409"},
+    {t:"It's well-formed but semantically invalid",r:"422"}
+  ]},
+  server:{q:"Is this temporary and likely to resolve?",o:[
+    {t:"No — something genuinely broke",r:"500"},
+    {t:"Yes — overloaded, restarting, maintenance",r:"503"},
+    {t:"An upstream service I depend on failed",r:"502"}
+  ]}
+};
+const R={
+  "200":["200","OK","<p>You have a representation of the result and you're returning it. The default success, and the one most over-used — check you didn't want 201 or 204.</p>"],
+  "201":["201","Created","<p><strong>Must</strong> include <code>Location</code> with the new resource's URL. Commonly also returns the created representation in the body so the client avoids a follow-up GET.</p>"],
+  "204":["204","No Content","<p>Success with deliberately no body. A body here violates the spec — intermediaries may strip it and clients may hang waiting for it. Typical for DELETE and for PUTs where the client already knows the resulting state.</p>"],
+  "202":["202","Accepted","<p>You've queued it. Legitimate for long-running work — but only useful if the response tells the client where to poll or how they'll be notified.</p>"],
+  "202-bad":["202","Accepted — but reconsider","<p>202 with no way to check status is a promise with no receipt. The client cannot distinguish 'still processing' from 'silently failed'. Either give them a status resource, or do the work synchronously and return a real result.</p>"],
+  "400":["400","Bad Request","<p>Syntax or shape. Unparseable JSON, missing required field, wrong type. Reserve it for 'I could not make sense of your message' — not for 'your business request is not allowed right now'.</p>"],
+  "401":["401","Unauthorized","<p>Badly named — it means <em>unauthenticated</em>. Requires a <code>WWW-Authenticate</code> header telling the client how to authenticate. Use for missing, malformed, or expired credentials.</p>"],
+  "403":["403","Forbidden","<p>Authenticated, understood, refused. Retrying with the same identity will not help. Do not use for 'not logged in' — that's 401.</p>"],
+  "404":["404","Not Found","<p>No resource at this URL. Perfectly ordinary. Include a problem body so the developer knows whether the ID was wrong or the route was.</p>"],
+  "404-hide":["404","Not Found — masking a 403","<p>Deliberate. You're authenticated and refused, but returning 403 would confirm the resource exists, letting an attacker enumerate valid IDs. Both codes are protocol-correct here; you chose the one that leaks less. <strong>Write this decision down</strong> — Week 13 will ask you to apply it consistently, and inconsistency is itself an oracle.</p>"],
+  "405":["405","Method Not Allowed","<p><strong>Must</strong> include <code>Allow</code> listing the methods this resource does support. Without it the client's only recovery is brute force.</p>"],
+  "406":["406","Not Acceptable","<p>You can't produce anything in the client's Accept range. Genuinely rare — most servers reasonably fall back to a default representation rather than refuse. If you return this, be sure you had no acceptable option at all.</p>"],
+  "415":["415","Unsupported Media Type","<p>You can't consume the body's Content-Type. Check this <em>before</em> negotiating the response — if you can't read the request there's no point choosing a response format.</p>"],
+  "409":["409","Conflict","<p>The request was fine; the resource's current state forbids it. Your quote state machine lives here: sending an already-sent quote, accepting an expired one. The body should say what the current state is so the client can recover.</p>"],
+  "412":["412","Precondition Failed","<p>The client sent <code>If-Match</code> with an ETag that no longer matches — someone else modified the resource first. This is optimistic concurrency control at the HTTP layer, and it is Week 3's centrepiece. Remember it: in Week 9 you'll meet the identical idea in the database as a version column.</p>"],
+  "422":["422","Unprocessable Content","<p>Syntactically valid, semantically wrong. Contested — WebDAV in origin, and plenty of engineers argue 400 covers it. Whichever you choose, be consistent across the whole API and write the ADR.</p>"],
+  "429":["429","Too Many Requests","<p>Rate limited. Should carry <code>Retry-After</code>. Note it's a 4xx: you are telling the client this is their behaviour to fix, and a well-behaved client will back off rather than hammer.</p>"],
+  "500":["500","Internal Server Error","<p>Never deliberate. If you can name the condition, it probably isn't a 500. Return a reference ID, log the detail, and leak nothing — no stack trace, no SQL, no class names.</p>"],
+  "502":["502","Bad Gateway","<p>An upstream you depend on returned something invalid or nothing at all. Distinguishing this from 500 in your own logs is what makes an outage debuggable at 2am.</p>"],
+  "503":["503","Service Unavailable","<p>Temporary and expected to resolve. Include <code>Retry-After</code>. This is the code that lets a client back off intelligently instead of retrying into an overload.</p>"]
+};
+let trail=[];
+const box=document.getElementById('treeBox'), pathEl=document.getElementById('path');
+function render(node){
+  const n=T[node];
+  pathEl.textContent=trail.length?trail.join('  ›  '):'';
+  box.innerHTML='<p class="tree-q">'+n.q+'</p>'+(n.sub?'<p class="tree-sub">'+n.sub+'</p>':'')+
+    '<div class="tree-opts">'+n.o.map((o,i)=>'<button data-i="'+i+'">'+o.t+'</button>').join('')+'</div>';
+  box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    const o=n.o[+b.dataset.i];
+    trail.push(o.t.length>36?o.t.slice(0,34)+'…':o.t);
+    if(o.r) result(o.r); else render(o.n);
+  }));
+}
+function result(k){
+  const r=R[k];
+  pathEl.textContent=trail.join('  ›  ');
+  box.innerHTML='<div class="verdict"><div class="code">'+r[0]+'</div><div class="name">'+r[1]+'</div>'+r[2]+'</div>';
+}
+document.getElementById('restart').addEventListener('click',()=>{trail=[];render('start');});
+render('start');
+
+/* ---------- content negotiation ---------- */
+const AVAIL=['application/json','application/xml','text/csv'];
+function parseAccept(h){
+  return h.split(',').map(s=>s.trim()).filter(Boolean).map(part=>{
+    const bits=part.split(';').map(x=>x.trim());
+    const range=bits[0].toLowerCase();
+    let q=1;
+    bits.slice(1).forEach(p=>{ const m=p.match(/^q=([0-9.]+)$/i); if(m) q=parseFloat(m[1]); });
+    return {range,q};
+  });
+}
+function specificity(r){ return r==='*/*'?0 : r.endsWith('/*')?1 : 2; }
+function matches(range,type){
+  if(range==='*/*') return true;
+  if(range.endsWith('/*')) return type.split('/')[0]===range.split('/')[0];
+  return range===type;
+}
+function negotiate(header){
+  const ranges=parseAccept(header);
+  const scored=AVAIL.map(type=>{
+    let best=null;
+    ranges.forEach(r=>{
+      if(!matches(r.range,type)) return;
+      if(!best || specificity(r.range)>specificity(best.range)) best=r;
+    });
+    return {type,q:best?best.q:0,via:best?best.range:'—'};
+  });
+  const acceptable=scored.filter(s=>s.q>0).sort((a,b)=>b.q-a.q);
+  return {scored,winner:acceptable[0]||null};
+}
+function runNeg(){
+  const h=document.getElementById('acceptIn').value;
+  const {scored,winner}=negotiate(h);
+  let out='';
+  scored.sort((a,b)=>b.q-a.q).forEach(s=>{
+    const w=winner && s.type===winner.type;
+    const cls=s.q===0?'lose':(w?'win':'lose');
+    out+='<span class="'+cls+'">'+(w?'▶ ':'  ')+s.type.padEnd(18,' ')+' q='+s.q.toFixed(2)+'</span>'+
+         '<span class="bar" style="width:'+(s.q*90)+'px;opacity:'+(s.q===0?0.15:(w?1:.35))+'"></span>'+
+         '<span class="lose"> matched by '+s.via+'</span>\n';
+  });
+  out+='\n';
+  if(winner){
+    out+='<span class="win">→ Content-Type: '+winner.type+'</span>\n';
+    out+='<span class="win">→ Vary: Accept</span>';
+    if(winner.via==='*/*') out+='\n<span class="lose">   (client expressed no preference — server picks its default)</span>';
+  }else{
+    out+='<span class="none">→ 406 Not Acceptable</span>\n<span class="lose">   Nothing the server can produce is acceptable to this client.\n   Consider whether refusing is really better than a sensible default.</span>';
+  }
+  document.getElementById('negOut').innerHTML=out;
+}
+document.getElementById('negRun').addEventListener('click',runNeg);
+document.getElementById('acceptIn').addEventListener('keydown',e=>{if(e.key==='Enter')runNeg();});
+document.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',()=>{
+  document.getElementById('acceptIn').value=b.dataset.a; runNeg();
+}));
+runNeg();
+
+document.querySelectorAll('.rv').forEach(b=>b.addEventListener('click',()=>{
+  const r=b.nextElementSibling; r.classList.toggle('on');
+  b.textContent=r.classList.contains('on')?'Hide':'Reveal';
+}));
+</script>
+</body>
+</html>
